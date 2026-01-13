@@ -207,7 +207,7 @@
               @click="copyValidatorToChecksum"
               class="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors"
             >
-              Copy to Checksum →
+              Copy to Add Checksum →
             </button>
           </div>
         </div>
@@ -269,10 +269,10 @@
       </div>
     </div>
 
-    <!-- Checksum Tool -->
+    <!-- Add Checksum Tool -->
     <div v-show="activeTool === 'checksum'" class="space-y-6">
       <div>
-        <h2 class="text-2xl font-bold mb-4">Checksum Generator</h2>
+        <h2 class="text-2xl font-bold mb-4">Add Checksum</h2>
         <p class="text-gray-600 mb-6">
           Add a SHA-256 checksum to your rate card for integrity verification.
         </p>
@@ -310,13 +310,96 @@
           <div v-else class="p-4 bg-gray-50 border border-gray-200 rounded-lg text-gray-500 text-sm h-96 flex items-center justify-center">
             Result will appear here
           </div>
+          <div v-if="checksumResult" class="mt-4 flex flex-wrap gap-2">
+            <button
+              @click="copyToClipboard(checksumResult.rateCard)"
+              class="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              Copy to Clipboard
+            </button>
+            <button
+              @click="copyChecksumToValidateChecksum"
+              class="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors"
+            >
+              Copy to Validate Checksum →
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Validate Checksum Tool -->
+    <div v-show="activeTool === 'validate-checksum'" class="space-y-6">
+      <div>
+        <h2 class="text-2xl font-bold mb-4">Validate Checksum</h2>
+        <p class="text-gray-600 mb-6">
+          Verify the SHA-256 checksum of your rate card to ensure data integrity.
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Rate Card JSON (with checksum)
+          </label>
+          <textarea
+            v-model="validateChecksumInput"
+            class="w-full h-96 p-4 border border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            placeholder="Paste your rate card JSON with checksum here..."
+          />
           <button
-            v-if="checksumResult"
-            @click="copyToClipboard(checksumResult.rateCard)"
-            class="mt-4 bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+            @click="handleValidateChecksum"
+            :disabled="validateChecksumLoading"
+            class="mt-4 bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 disabled:bg-gray-400 transition-colors"
           >
-            Copy to Clipboard
+            {{ validateChecksumLoading ? 'Validating...' : 'Validate Checksum' }}
           </button>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Validation Result
+          </label>
+          <div 
+            v-if="validateChecksumResult"
+            class="p-4 rounded-lg border"
+            :class="validateChecksumResult.valid ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'"
+          >
+            <div class="flex items-start">
+              <svg 
+                v-if="validateChecksumResult.valid"
+                class="w-6 h-6 text-green-600 mr-3 flex-shrink-0" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <svg 
+                v-else
+                class="w-6 h-6 text-red-600 mr-3 flex-shrink-0" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div class="flex-1">
+                <h3 
+                  class="font-semibold mb-2"
+                  :class="validateChecksumResult.valid ? 'text-green-800' : 'text-red-800'"
+                >
+                  {{ validateChecksumResult.message }}
+                </h3>
+                <div v-if="validateChecksumResult.details" class="text-sm" :class="validateChecksumResult.valid ? 'text-green-700' : 'text-red-700'">
+                  <p v-if="validateChecksumResult.details.checksum">Checksum: {{ validateChecksumResult.details.checksum }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-else class="p-4 bg-gray-50 border border-gray-200 rounded-lg text-gray-500 text-sm h-96 flex items-center justify-center">
+            Validation result will appear here
+          </div>
         </div>
       </div>
     </div>
@@ -324,7 +407,7 @@
 </template>
 
 <script setup lang="ts">
-import { addChecksum, validate } from '@connexcs/interconnect-made-easy'
+import { addChecksum, validate, verifyChecksum } from '@connexcs/interconnect-made-easy'
 
 const activeTool = ref('builder')
 
@@ -332,7 +415,8 @@ const tools = [
   { id: 'builder', name: 'Builder' },
   { id: 'example', name: 'Example' },
   { id: 'validator', name: 'Validator' },
-  { id: 'checksum', name: 'Checksum' },
+  { id: 'checksum', name: 'Add Checksum' },
+  { id: 'validate-checksum', name: 'Validate Checksum' },
 ]
 
 // Validator
@@ -390,6 +474,43 @@ const handleAddChecksum = async () => {
     alert('Error adding checksum: ' + (error as Error).message)
   } finally {
     checksumLoading.value = false
+  }
+}
+
+// Validate Checksum
+const validateChecksumInput = ref('')
+const validateChecksumResult = ref<any>(null)
+const validateChecksumLoading = ref(false)
+
+const handleValidateChecksum = async () => {
+  validateChecksumLoading.value = true
+  validateChecksumResult.value = null
+  
+  try {
+    // Parse the input JSON
+    const parsed = JSON.parse(validateChecksumInput.value)
+    
+    // Use the interconnect-made-easy package to verify checksum
+    const isValid = await verifyChecksum(parsed)
+    
+    // Set the result
+    validateChecksumResult.value = {
+      valid: isValid,
+      message: isValid ? 'Checksum is valid!' : 'Checksum verification failed',
+      details: {
+        checksum: parsed.metadata?.checksum || 'No checksum found'
+      }
+    }
+  } catch (error) {
+    validateChecksumResult.value = {
+      valid: false,
+      message: 'Error validating checksum',
+      details: {
+        error: (error as Error).message
+      }
+    }
+  } finally {
+    validateChecksumLoading.value = false
   }
 }
 
@@ -483,6 +604,11 @@ const copyExampleToValidator = () => {
 const copyValidatorToChecksum = () => {
   checksumInput.value = validatorInput.value
   activeTool.value = 'checksum'
+}
+
+const copyChecksumToValidateChecksum = () => {
+  validateChecksumInput.value = checksumResult.value?.rateCard || ''
+  activeTool.value = 'validate-checksum'
 }
 
 // Utility
