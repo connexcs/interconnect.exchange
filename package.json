@@ -13,6 +13,7 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
+    "@connexcs/interconnect-made-easy": "^0.1.0",
     "@tailwindcss/typography": "^0.5.19",
     "marked": "^12.0.0",
     "nuxt": "^3.14.159",

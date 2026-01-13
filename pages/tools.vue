@@ -127,7 +127,7 @@
             placeholder="Paste your rate card JSON here..."
           />
           <button
-            @click="addChecksum"
+            @click="handleAddChecksum"
             :disabled="checksumLoading"
             class="mt-4 bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 disabled:bg-gray-400 transition-colors"
           >
@@ -306,6 +306,8 @@
 </template>
 
 <script setup lang="ts">
+import { addChecksum, validate } from '@connexcs/interconnect-made-easy'
+
 const activeTool = ref('validator')
 
 const tools = [
@@ -325,11 +327,13 @@ const validateRateCard = async () => {
   validatorResult.value = null
   
   try {
-    const { data } = await useFetch('/api/tools/validate', {
-      method: 'POST',
-      body: { rateCard: validatorInput.value }
-    })
-    validatorResult.value = data.value
+    // Use the interconnect-made-easy package for validation
+    const result = validate(validatorInput.value)
+    validatorResult.value = {
+      valid: result.valid,
+      message: result.valid ? 'Rate card is valid!' : 'Validation failed',
+      errors: result.errors?.map(err => err.message || String(err))
+    }
   } catch (error) {
     validatorResult.value = {
       valid: false,
@@ -346,16 +350,24 @@ const checksumInput = ref('')
 const checksumResult = ref<any>(null)
 const checksumLoading = ref(false)
 
-const addChecksum = async () => {
+const handleAddChecksum = async () => {
   checksumLoading.value = true
   checksumResult.value = null
   
   try {
-    const { data } = await useFetch('/api/tools/checksum', {
-      method: 'POST',
-      body: { rateCard: checksumInput.value }
-    })
-    checksumResult.value = data.value
+    // Parse the input JSON
+    const parsed = JSON.parse(checksumInput.value)
+    
+    // Use the interconnect-made-easy package to add checksum
+    const docWithChecksum = await addChecksum(parsed)
+    
+    // Set the result
+    checksumResult.value = {
+      success: true,
+      rateCard: JSON.stringify(docWithChecksum, null, 2),
+      checksum: docWithChecksum.metadata?.checksum,
+      message: 'Checksum added successfully'
+    }
   } catch (error) {
     alert('Error adding checksum: ' + (error as Error).message)
   } finally {
