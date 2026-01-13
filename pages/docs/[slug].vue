@@ -35,6 +35,21 @@
 <script setup lang="ts">
 import { marked } from 'marked'
 
+// Configure marked to generate heading IDs for anchor links
+const renderer = new marked.Renderer()
+renderer.heading = (text: string, level: number) => {
+  const slug = text
+    .toLowerCase()
+    .replace(/<[^>]*>/g, '') // Remove HTML tags
+    .replace(/[^\w\s-]/g, '') // Remove special characters
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .replace(/-+/g, '-') // Replace multiple hyphens with single
+    .trim()
+  return `<h${level} id="${slug}">${text}</h${level}>`
+}
+
+marked.setOptions({ renderer })
+
 const route = useRoute()
 const currentSlug = computed(() => (route.params.slug as string) || 'readme')
 
