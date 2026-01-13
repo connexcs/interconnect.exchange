@@ -22,6 +22,159 @@
       </nav>
     </div>
 
+    <!-- Builder Tool -->
+    <div v-show="activeTool === 'builder'" class="space-y-6">
+      <div>
+        <h2 class="text-2xl font-bold mb-4">Rate Card Builder</h2>
+        <p class="text-gray-600 mb-6">
+          Build a rate card using a simple form interface.
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Name
+            </label>
+            <input
+              v-model="builder.name"
+              type="text"
+              class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              placeholder="My Telecom Rate Card"
+            />
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Version
+              </label>
+              <input
+                v-model="builder.version"
+                type="text"
+                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                placeholder="1.0"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Date
+              </label>
+              <input
+                v-model="builder.date"
+                type="date"
+                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Card Name
+            </label>
+            <input
+              v-model="builder.cardName"
+              type="text"
+              class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              placeholder="Basic Termination"
+            />
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Card Type
+              </label>
+              <select
+                v-model="builder.cardType"
+                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              >
+                <option value="termination">Termination</option>
+                <option value="origination">Origination</option>
+                <option value="messaging">Messaging</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Currency
+              </label>
+              <input
+                v-model="builder.currency"
+                type="text"
+                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                placeholder="USD"
+              />
+            </div>
+          </div>
+
+          <button
+            @click="buildRateCard"
+            class="w-full bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors"
+          >
+            Build Rate Card
+          </button>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Generated Rate Card
+          </label>
+          <textarea
+            :value="builtRateCard"
+            readonly
+            class="w-full h-[500px] p-4 border border-gray-300 rounded-lg font-mono text-sm bg-gray-50"
+          />
+          <div v-if="builtRateCard" class="mt-4 flex flex-wrap gap-2">
+            <button
+              @click="copyToClipboard(builtRateCard)"
+              class="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              Copy to Clipboard
+            </button>
+            <button
+              @click="copyBuilderToValidator"
+              class="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors"
+            >
+              Copy to Validator →
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Example Tool -->
+    <div v-show="activeTool === 'example'" class="space-y-6">
+      <div>
+        <h2 class="text-2xl font-bold mb-4">Example Rate Card</h2>
+        <p class="text-gray-600 mb-6">
+          A complete example of a valid rate card JSON document.
+        </p>
+      </div>
+
+      <div class="max-w-4xl">
+        <textarea
+          :value="exampleRateCard"
+          readonly
+          class="w-full h-[600px] p-4 border border-gray-300 rounded-lg font-mono text-sm bg-gray-50"
+        />
+        <div class="mt-4 flex flex-wrap gap-2">
+          <button
+            @click="copyToClipboard(exampleRateCard)"
+            class="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            Copy to Clipboard
+          </button>
+          <button
+            @click="copyExampleToValidator"
+            class="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors"
+          >
+            Copy to Validator →
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Validator Tool -->
     <div v-show="activeTool === 'validator'" class="space-y-6">
       <div>
@@ -41,13 +194,22 @@
             class="w-full h-96 p-4 border border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             placeholder="Paste your rate card JSON here..."
           />
-          <button
-            @click="validateRateCard"
-            :disabled="validatorLoading"
-            class="mt-4 bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 disabled:bg-gray-400 transition-colors"
-          >
-            {{ validatorLoading ? 'Validating...' : 'Validate' }}
-          </button>
+          <div class="mt-4 flex flex-wrap gap-2">
+            <button
+              @click="validateRateCard"
+              :disabled="validatorLoading"
+              class="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 disabled:bg-gray-400 transition-colors"
+            >
+              {{ validatorLoading ? 'Validating...' : 'Validate' }}
+            </button>
+            <button
+              v-if="validatorInput"
+              @click="copyValidatorToChecksum"
+              class="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors"
+            >
+              Copy to Checksum →
+            </button>
+          </div>
         </div>
 
         <div>
@@ -158,163 +320,19 @@
         </div>
       </div>
     </div>
-
-    <!-- Builder Tool -->
-    <div v-show="activeTool === 'builder'" class="space-y-6">
-      <div>
-        <h2 class="text-2xl font-bold mb-4">Rate Card Builder</h2>
-        <p class="text-gray-600 mb-6">
-          Build a rate card using a simple form interface.
-        </p>
-      </div>
-
-      <div class="grid md:grid-cols-2 gap-6">
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Name
-            </label>
-            <input
-              v-model="builder.name"
-              type="text"
-              class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              placeholder="My Telecom Rate Card"
-            />
-          </div>
-
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Version
-              </label>
-              <input
-                v-model="builder.version"
-                type="text"
-                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="1.0"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Date
-              </label>
-              <input
-                v-model="builder.date"
-                type="date"
-                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Card Name
-            </label>
-            <input
-              v-model="builder.cardName"
-              type="text"
-              class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              placeholder="Basic Termination"
-            />
-          </div>
-
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Card Type
-              </label>
-              <select
-                v-model="builder.cardType"
-                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              >
-                <option value="termination">Termination</option>
-                <option value="origination">Origination</option>
-                <option value="messaging">Messaging</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Currency
-              </label>
-              <input
-                v-model="builder.currency"
-                type="text"
-                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="USD"
-              />
-            </div>
-          </div>
-
-          <button
-            @click="buildRateCard"
-            class="w-full bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors"
-          >
-            Build Rate Card
-          </button>
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            Generated Rate Card
-          </label>
-          <textarea
-            :value="builtRateCard"
-            readonly
-            class="w-full h-[500px] p-4 border border-gray-300 rounded-lg font-mono text-sm bg-gray-50"
-          />
-          <button
-            v-if="builtRateCard"
-            @click="copyToClipboard(builtRateCard)"
-            class="mt-4 bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors"
-          >
-            Copy to Clipboard
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Example Tool -->
-    <div v-show="activeTool === 'example'" class="space-y-6">
-      <div>
-        <h2 class="text-2xl font-bold mb-4">Example Rate Card</h2>
-        <p class="text-gray-600 mb-6">
-          A complete example of a valid rate card JSON document.
-        </p>
-      </div>
-
-      <div class="max-w-4xl">
-        <textarea
-          :value="exampleRateCard"
-          readonly
-          class="w-full h-[600px] p-4 border border-gray-300 rounded-lg font-mono text-sm bg-gray-50"
-        />
-        <button
-          @click="copyToClipboard(exampleRateCard)"
-          class="mt-4 bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors mr-4"
-        >
-          Copy to Clipboard
-        </button>
-        <button
-          @click="loadExample"
-          class="mt-4 bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors"
-        >
-          Load in Validator
-        </button>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { addChecksum, validate } from '@connexcs/interconnect-made-easy'
 
-const activeTool = ref('validator')
+const activeTool = ref('builder')
 
 const tools = [
-  { id: 'validator', name: 'Validator' },
-  { id: 'checksum', name: 'Checksum' },
   { id: 'builder', name: 'Builder' },
   { id: 'example', name: 'Example' },
+  { id: 'validator', name: 'Validator' },
+  { id: 'checksum', name: 'Checksum' },
 ]
 
 // Validator
@@ -449,6 +467,22 @@ const exampleRateCard = `{
 const loadExample = () => {
   validatorInput.value = exampleRateCard
   activeTool.value = 'validator'
+}
+
+// Copy between tools
+const copyBuilderToValidator = () => {
+  validatorInput.value = builtRateCard.value
+  activeTool.value = 'validator'
+}
+
+const copyExampleToValidator = () => {
+  validatorInput.value = exampleRateCard
+  activeTool.value = 'validator'
+}
+
+const copyValidatorToChecksum = () => {
+  checksumInput.value = validatorInput.value
+  activeTool.value = 'checksum'
 }
 
 // Utility
