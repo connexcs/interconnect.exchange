@@ -29,13 +29,28 @@ export default defineNuxtConfig({
     },
     resolve: {
       alias: {
-        '../interconnect-made-easy/schema/open-rate-card.schema.json': 
-          '/node_modules/@connexcs/interconnect-made-easy/interconnect-made-easy/schema/open-rate-card.schema.json'
+        '../interconnect-made-easy/schema/interconnect-made-easy.schema.json': 
+          '/node_modules/@connexcs/interconnect-made-easy/interconnect-made-easy/schema/interconnect-made-easy.schema.json'
       }
     }
   },
 
   nitro: {
-    preset: 'cloudflare-pages'
-  }
+    preset: 'cloudflare-pages',
+    prerender: {
+      routes: [
+        '/',
+        '/tools',
+        '/docs',
+        '/docs/readme',
+        '/docs/specification',
+        '/docs/card-types',
+        '/docs/versioning',
+        '/docs/glossary',
+        '/docs/contributing'
+      ]
+    }
+  },
+
+  ssr: false
 })

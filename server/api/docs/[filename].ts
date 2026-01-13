@@ -1,4 +1,3 @@
-import { marked } from 'marked'
 import { readFile } from 'fs/promises'
 import { join } from 'path'
 
@@ -15,8 +14,7 @@ export default defineEventHandler(async (event) => {
   try {
     const filePath = join(process.cwd(), 'docs-content', filename)
     const content = await readFile(filePath, 'utf-8')
-    const html = marked(content)
-    return html
+    return content
   } catch (error) {
     throw createError({
       statusCode: 404,

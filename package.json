@@ -4,16 +4,17 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "nuxt dev",
-    "build": "nuxt build",
-    "generate": "nuxt generate",
+    "dev": "npm run copy-docs && nuxt dev",
+    "build": "npm run copy-docs && nuxt build",
+    "generate": "npm run copy-docs && nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
+    "copy-docs": "mkdir -p public/docs && cp docs-content/*.md public/docs/",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
-    "@connexcs/interconnect-made-easy": "^0.1.0",
+    "@connexcs/interconnect-made-easy": "^0.1.2",
     "@tailwindcss/typography": "^0.5.19",
     "marked": "^12.0.0",
     "nuxt": "^3.14.159",

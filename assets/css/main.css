@@ -10,3 +10,23 @@
 body {
   @apply bg-gray-50 text-gray-900;
 }
+
+/* Documentation code blocks */
+.prose pre {
+  @apply bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto;
+}
+
+.prose pre code {
+  @apply bg-transparent text-gray-100 p-0 text-sm font-mono;
+  color: inherit !important;
+  background: transparent !important;
+}
+
+.prose code {
+  @apply bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-sm font-mono;
+}
+
+.prose code::before,
+.prose code::after {
+  content: none;
+}

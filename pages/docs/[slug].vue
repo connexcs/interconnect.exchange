@@ -33,6 +33,8 @@
 </template>
 
 <script setup lang="ts">
+import { marked } from 'marked'
+
 const route = useRoute()
 const currentSlug = computed(() => (route.params.slug as string) || 'readme')
 
@@ -45,14 +47,39 @@ const docs = [
   { slug: 'contributing', title: 'Contributing', file: 'CONTRIBUTING.md' },
 ]
 
+// Build map of .md filenames to their /docs/ slugs from docs array
+const docLinkMap = Object.fromEntries(
+  docs.map(doc => [doc.file, `/docs/${doc.slug}`])
+)
+
+// Rewrite internal .md links to /docs/ routes
+function rewriteInternalLinks(markdown: string): string {
+  return markdown.replace(
+    /\[([^\]]+)\]\(([A-Z-]+\.md)(#[^)]+)?\)/g,
+    (match, text, filename, anchor = '') => {
+      const slug = docLinkMap[filename]
+      if (slug) {
+        return `[${text}](${slug}${anchor})`
+      }
+      return match
+    }
+  )
+}
+
 const content = ref('')
 
 const loadDoc = async () => {
   const doc = docs.find(d => d.slug === currentSlug.value)
   if (doc) {
-    const { data } = await useFetch(`/api/docs/${doc.file}`)
-    if (data.value) {
-      content.value = data.value as string
+    try {
+      const response = await fetch(`/docs/${doc.file}`)
+      if (response.ok) {
+        const markdown = await response.text()
+        const rewritten = rewriteInternalLinks(markdown)
+        content.value = marked(rewritten) as string
+      }
+    } catch (error) {
+      console.error('Failed to load documentation:', error)
     }
   }
 }
