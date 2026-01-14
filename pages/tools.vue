@@ -108,6 +108,116 @@
             </div>
           </div>
 
+          <!-- CSV Import Section -->
+          <div class="border border-gray-200 rounded-lg p-4">
+            <button
+              @click="showCsvImport = !showCsvImport"
+              class="flex items-center justify-between w-full text-left"
+            >
+              <span class="text-sm font-medium text-gray-700">📄 Import Routes from CSV</span>
+              <svg 
+                class="w-5 h-5 text-gray-500 transition-transform" 
+                :class="{ 'rotate-180': showCsvImport }"
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            
+            <div v-show="showCsvImport" class="mt-4 space-y-4">
+              <p class="text-xs text-gray-500">
+                Upload a CSV file or paste CSV data with columns: <code class="bg-gray-100 px-1 rounded">prefix</code>, <code class="bg-gray-100 px-1 rounded">destination</code>, <code class="bg-gray-100 px-1 rounded">rate</code>, <code class="bg-gray-100 px-1 rounded">interval</code> (optional), <code class="bg-gray-100 px-1 rounded">increment</code> (optional)
+              </p>
+              
+              <!-- File Upload -->
+              <div>
+                <input
+                  ref="fileInputRef"
+                  type="file"
+                  accept=".csv,text/csv"
+                  @change="handleFileUpload"
+                  class="hidden"
+                />
+                <button
+                  @click="triggerFileInput"
+                  class="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-primary-500 hover:bg-primary-50 transition-colors"
+                >
+                  <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  <span class="mt-2 block text-sm text-gray-600">Click to upload CSV file</span>
+                </button>
+              </div>
+              
+              <div class="text-center text-sm text-gray-500">— or —</div>
+              
+              <!-- Paste CSV -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  Paste CSV Data
+                </label>
+                <textarea
+                  v-model="csvInput"
+                  class="w-full h-32 p-3 border border-gray-300 rounded-lg font-mono text-xs focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  placeholder="prefix,destination,rate,interval,increment&#10;1,USA,0.0085,60,1&#10;44,UK,0.0095,60,1"
+                />
+                <button
+                  @click="handleCsvPaste"
+                  :disabled="!csvInput.trim()"
+                  class="mt-2 w-full bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 disabled:bg-gray-400 transition-colors text-sm"
+                >
+                  Parse CSV
+                </button>
+              </div>
+              
+              <!-- Success/Error Messages -->
+              <div v-if="csvError" class="p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p class="text-sm text-red-700">{{ csvError }}</p>
+              </div>
+              
+              <div v-if="csvSuccess" class="p-3 bg-green-50 border border-green-200 rounded-lg">
+                <div class="flex items-center justify-between">
+                  <p class="text-sm text-green-700">{{ csvSuccess }}</p>
+                  <button
+                    @click="clearCsvRoutes"
+                    class="text-sm text-red-600 hover:text-red-800"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Preview imported rates -->
+              <div v-if="csvRates.length > 0" class="max-h-48 overflow-auto border border-gray-200 rounded-lg">
+                <table class="min-w-full text-xs">
+                  <thead class="bg-gray-50 sticky top-0">
+                    <tr>
+                      <th class="px-3 py-2 text-left font-medium text-gray-500">Prefix</th>
+                      <th class="px-3 py-2 text-left font-medium text-gray-500">Destination</th>
+                      <th class="px-3 py-2 text-left font-medium text-gray-500">Rate</th>
+                      <th class="px-3 py-2 text-left font-medium text-gray-500">Interval</th>
+                      <th class="px-3 py-2 text-left font-medium text-gray-500">Increment</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-200">
+                    <tr v-for="(rate, index) in csvRates.slice(0, 100)" :key="index">
+                      <td class="px-3 py-2 font-mono">{{ rate.prefix }}</td>
+                      <td class="px-3 py-2">{{ rate.destination }}</td>
+                      <td class="px-3 py-2 font-mono">{{ rate.rate }}</td>
+                      <td class="px-3 py-2">{{ rate.interval }}</td>
+                      <td class="px-3 py-2">{{ rate.increment }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <p v-if="csvRates.length > 100" class="p-2 text-xs text-gray-500 text-center bg-gray-50">
+                  Showing first 100 of {{ csvRates.length }} rates
+                </p>
+              </div>
+            </div>
+          </div>
+
           <button
             @click="buildRateCard"
             class="w-full bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors"
@@ -119,6 +229,7 @@
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">
             Generated Rate Card
+            <span v-if="csvRates.length > 0" class="text-xs text-green-600 ml-2">({{ csvRates.length }} rates included)</span>
           </label>
           <textarea
             :value="builtRateCard"
@@ -886,6 +997,7 @@
 <script setup lang="ts">
 import { addChecksum, validate, verifyChecksum, generatePemKeyPair, signDocument, verifySignature } from '@connexcs/interconnect-made-easy'
 import type { SigningAlgorithm } from '@connexcs/interconnect-made-easy'
+import Papa from 'papaparse'
 
 const activeTool = ref('builder')
 
@@ -1010,25 +1122,170 @@ const builder = ref({
 
 const builtRateCard = ref('')
 
+// CSV Import - rates are stored as 2D array per Interconnect Made Easy schema
+// Schema format: { fields: [{name: "prefix"}, ...], rates: [["1", "USA", 0.01], ...] }
+interface ParsedRate {
+  prefix: string
+  destination: string
+  rate: number
+  interval: number
+  increment: number
+}
+
+const csvRates = ref<ParsedRate[]>([])
+const csvInput = ref('')
+const csvError = ref('')
+const csvSuccess = ref('')
+const showCsvImport = ref(false)
+const fileInputRef = ref<HTMLInputElement | null>(null)
+
+const parseCsv = (csvText: string) => {
+  csvError.value = ''
+  csvSuccess.value = ''
+  
+  if (!csvText.trim()) {
+    csvError.value = 'Please provide CSV data'
+    return
+  }
+  
+  Papa.parse(csvText, {
+    header: true,
+    skipEmptyLines: true,
+    transformHeader: (header: string) => header.toLowerCase().trim(),
+    complete: (results: Papa.ParseResult<Record<string, string>>) => {
+      if (results.errors.length > 0) {
+        csvError.value = `Parse error: ${results.errors[0].message}`
+        return
+      }
+      
+      const data = results.data as Record<string, string>[]
+      
+      if (data.length === 0) {
+        csvError.value = 'No data rows found in CSV'
+        return
+      }
+      
+      // Check for required columns
+      const firstRow = data[0]
+      const hasPrefix = 'prefix' in firstRow
+      const hasDestination = 'destination' in firstRow
+      const hasRate = 'rate' in firstRow
+      
+      if (!hasPrefix || !hasRate) {
+        csvError.value = 'CSV must have at least "prefix" and "rate" columns'
+        return
+      }
+      
+      try {
+        const rates: ParsedRate[] = data.map((row, index) => {
+          const rate = parseFloat(row.rate)
+          if (isNaN(rate)) {
+            throw new Error(`Invalid rate value on row ${index + 2}: "${row.rate}"`)
+          }
+          
+          return {
+            prefix: String(row.prefix || '').trim(),
+            destination: String(row.destination || '').trim(),
+            rate: rate,
+            interval: row.interval ? parseInt(row.interval, 10) : 60,
+            increment: row.increment ? parseInt(row.increment, 10) : 1
+          }
+        })
+        
+        csvRates.value = rates
+        csvSuccess.value = `Successfully imported ${rates.length} rates`
+        csvInput.value = csvText
+      } catch (error) {
+        csvError.value = (error as Error).message
+      }
+    },
+    error: (error: Error) => {
+      csvError.value = `Parse error: ${error.message}`
+    }
+  })
+}
+
+const handleCsvPaste = () => {
+  parseCsv(csvInput.value)
+}
+
+const handleFileUpload = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  
+  if (!file) return
+  
+  if (!file.name.endsWith('.csv') && file.type !== 'text/csv') {
+    csvError.value = 'Please upload a CSV file'
+    return
+  }
+  
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    const text = e.target?.result as string
+    csvInput.value = text
+    parseCsv(text)
+  }
+  reader.onerror = () => {
+    csvError.value = 'Error reading file'
+  }
+  reader.readAsText(file)
+  
+  // Reset file input
+  target.value = ''
+}
+
+const clearCsvRoutes = () => {
+  csvRates.value = []
+  csvInput.value = ''
+  csvError.value = ''
+  csvSuccess.value = ''
+}
+
+const triggerFileInput = () => {
+  fileInputRef.value?.click()
+}
+
 const buildRateCard = () => {
+  const card: Record<string, unknown> = {
+    name: builder.value.cardName,
+    type: builder.value.cardType,
+    currency: builder.value.currency,
+    endpoint: 'default'
+  }
+  
+  // Add rates in schema-compliant format: fields + 2D rates array
+  // Per Interconnect Made Easy specification
+  if (csvRates.value.length > 0) {
+    card.fields = [
+      { name: 'prefix' },
+      { name: 'destination' },
+      { name: 'rate' },
+      { name: 'interval' },
+      { name: 'increment' }
+    ]
+    card.rates = csvRates.value.map((r: ParsedRate) => [
+      r.prefix,
+      r.destination,
+      r.rate,
+      r.interval,
+      r.increment
+    ])
+  }
+  
   const rateCard = {
     name: builder.value.name,
     schema_version: '1.0.0',
     version: builder.value.version,
     date: builder.value.date,
     cards: {
-      default: {
-        name: builder.value.cardName,
-        type: builder.value.cardType,
-        currency: builder.value.currency,
-        endpoint: 'default'
-      }
+      default: card
     }
   }
   builtRateCard.value = JSON.stringify(rateCard, null, 2)
 }
 
-// Example
+// Example - using correct Interconnect Made Easy schema format
 const exampleRateCard = `{
   "name": "ABC Telecom Rate Card",
   "schema_version": "1.0.0",
@@ -1041,30 +1298,26 @@ const exampleRateCard = `{
       "name": "International Termination",
       "type": "termination",
       "currency": "USD",
-      "endpoint": "sip.abctelecom.com",
-      "routes": [
-        {
-          "prefix": "1",
-          "destination": "USA",
-          "rate": 0.0085,
-          "interval": 60,
-          "increment": 1
-        },
-        {
-          "prefix": "44",
-          "destination": "UK",
-          "rate": 0.0095,
-          "interval": 60,
-          "increment": 1
-        },
-        {
-          "prefix": "91",
-          "destination": "India",
-          "rate": 0.0125,
-          "interval": 60,
-          "increment": 1
-        }
+      "endpoint": "default",
+      "fields": [
+        { "name": "prefix" },
+        { "name": "destination" },
+        { "name": "rate" },
+        { "name": "interval" },
+        { "name": "increment" }
+      ],
+      "rates": [
+        ["1", "USA", 0.0085, 60, 1],
+        ["44", "UK", 0.0095, 60, 1],
+        ["91", "India", 0.0125, 60, 1]
       ]
+    }
+  },
+  "endpoints": {
+    "default": {
+      "protocol": "sip",
+      "host": "sip.abctelecom.com",
+      "port": 5060
     }
   }
 }`
