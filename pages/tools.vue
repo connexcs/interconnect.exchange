@@ -244,6 +244,12 @@
               Copy to Clipboard
             </button>
             <button
+              @click="downloadAsJson(builtRateCard, `${builder.name || 'rate-card'}.json`)"
+              class="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              ⬇ Download JSON
+            </button>
+            <button
               @click="copyBuilderToValidator"
               class="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors"
             >
@@ -275,6 +281,12 @@
             class="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors"
           >
             Copy to Clipboard
+          </button>
+          <button
+            @click="downloadAsJson(exampleRateCard, 'example-rate-card.json')"
+            class="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            ⬇ Download JSON
           </button>
           <button
             @click="copyExampleToValidator"
@@ -435,6 +447,12 @@
               class="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors"
             >
               Copy to Clipboard
+            </button>
+            <button
+              @click="downloadAsJson(checksumResult.rateCard, 'rate-card-with-checksum.json')"
+              class="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              ⬇ Download JSON
             </button>
             <button
               @click="copyChecksumToValidateChecksum"
@@ -622,6 +640,12 @@
               class="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors"
             >
               Copy to Clipboard
+            </button>
+            <button
+              @click="downloadAsJson(signResult.rateCard, 'rate-card-signed.json')"
+              class="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              ⬇ Download JSON
             </button>
             <button
               @click="copySignedToVerify"
@@ -1577,6 +1601,22 @@ const copyToClipboard = async (text: string) => {
     alert('Copied to clipboard!')
   } catch (error) {
     alert('Failed to copy to clipboard')
+  }
+}
+
+const downloadAsJson = (jsonString: string, filename: string = 'rate-card.json') => {
+  try {
+    const blob = new Blob([jsonString], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  } catch (error) {
+    alert('Failed to download file')
   }
 }
 
